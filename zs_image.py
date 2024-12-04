@@ -10,16 +10,30 @@ processor = AutoProcessor.from_pretrained(
 
 labels = ["a photo of a cat", "a photo of a dog"]
 
-image = Image.open("./cats.jpeg")
-inputs = processor(
-  text=labels,
-  images=image,
-  return_tensors="pt",
-  padding=True
-)
-outputs = model(**inputs)
-
-probs = outputs.logits_per_image.softmax(dim=1)[0]
-probs = list(probs)
-for i in range(len(labels)):
-  print(f"label: {labels[i]} - probability of {probs[i].item():.4f}")
+def classify_image(image_path):
+    """
+    Perform zero-shot classification on a single image.
+    
+    Args:
+        image_path (str): Path to the image.
+    
+    Returns:
+        dict: Classification probabilities for the image.
+    """
+    
+    image = Image.open(image_path) # Open the image
+    
+    # Preprocess the image and labels
+    inputs = processor(
+        text=labels,
+        images=image,
+        return_tensors="pt",
+        padding=True
+    )
+    
+    # Perform inference using the CLIP model
+    outputs = model(**inputs)
+    probs = outputs.logits_per_image.softmax(dim=1)[0]  # Calculate probabilities
+    
+    # Return results as a dictionary with label and probability pairs
+    return {labels[i]: probs[i].item() for i in range(len(labels))}
