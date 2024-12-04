@@ -1,2 +1,2 @@
 # Zero-Shot_Classification
-Zero-shot classification from image and audio.
+Developed app using open-source models that classifies image and audio inputs from set of unseen labels without requiring prior training.
