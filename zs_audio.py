@@ -1,5 +1,7 @@
 from datasets import load_dataset, Audio  
-from transformers import pipeline        
+from transformers import pipeline   
+import torchaudio
+import numpy as np     
 
 # Initialize the zero-shot audio classification pipeline
 zero_shot_classifier = pipeline(
@@ -9,11 +11,11 @@ zero_shot_classifier = pipeline(
 
 # Define the candidate labels for classification
 candidate_labels = [
-    "Sound of a dog",
-    "Sound of vacuum cleaner",
-    "Sound of a child crying",
+    "Sound of a dog barking",
+    "Sound of car driving",
+    "Sound of a person talking",
     "Sound of a bird singing",
-    "Sound of an airplane",
+    "Sound of a plane flying",
 ]
 
 # Function to perform inference on a dataset
@@ -22,10 +24,7 @@ def audio_dataset_inference():
     dataset = load_dataset("ashraq/esc50", split="train[0:10]")
     
     # Ensure all audio samples in the dataset have the same sampling rate (48kHz)
-    dataset = dataset.cast_column(
-        "audio",
-        Audio(sampling_rate=48_000)
-    )
+    dataset = dataset.cast_column("audio", Audio(sampling_rate=48_000))
     
     # Select the first audio sample from the dataset
     audio_sample = dataset[0]
@@ -37,12 +36,9 @@ def audio_dataset_inference():
     )
     print(result)
 
-# Function to classify a single audio file
 def classify_audio(audio_file):
     """
     Perform zero-shot classification on a single audio file.
-    This function processes the input audio file, ensuring it has the correct sampling rate,
-    and classifies it using the zero-shot classifier.
     
     Args:
         audio_file (str): Path to the audio file to classify.
@@ -50,14 +46,25 @@ def classify_audio(audio_file):
     Returns:
         dict: Classification labels and their corresponding scores.
     """
-    # Load and process the audio file to match the expected sampling rate (48kHz)
-    audio_data = Audio(sampling_rate=48_000).decode_example(audio_file)
-    
-    # Perform zero-shot classification on the processed audio data
-    result = zero_shot_classifier(
-        audio_data["array"],  # Extract the audio array from the processed file
-        candidate_labels=candidate_labels  # Pass the candidate labels for classification
-    )
-    
-    # Return the classification results as a dictionary
-    return {label['label']: label['score'] for label in result}
+    try:
+        # Load audio file using torchaudio
+        waveform, sample_rate = torchaudio.load(audio_file)
+        
+        # Resample audio to 48kHz (if necessary)
+        if sample_rate != 48000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=48000)
+            waveform = resampler(waveform)
+        
+        # Convert waveform to NumPy array
+        audio_array = waveform.squeeze().numpy()
+
+        # Perform zero-shot classification
+        result = zero_shot_classifier(
+            audio_array,  # Pass the audio array
+            candidate_labels=candidate_labels
+        )
+        return {label['label']: label['score'] for label in result}
+    except Exception as e:
+        print(f"Error in classify_audio: {e}")
+        return {"Error": str(e)}
+        
