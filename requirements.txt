@@ -2,3 +2,5 @@ gradio
 transformers
 datasets
 pillow
+torch
+torchaudio
