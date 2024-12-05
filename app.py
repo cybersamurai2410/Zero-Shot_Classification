@@ -4,10 +4,11 @@ from zs_image import classify_image
 
 audio_interface = gr.Interface(
     fn=classify_audio,
-    inputs=gr.Audio(source="microphone", type="filepath"),
+    inputs=gr.Audio(sources=["microphone", "upload"], type="filepath"),
     outputs=gr.Label(),
     title="Zero-Shot Audio Classification",
-    description="Classify audio into predefined categories without prior training."
+    description="Classify audio into predefined categories without prior training.",
+    allow_flagging="never",
 )
 
 image_interface = gr.Interface(
@@ -15,13 +16,13 @@ image_interface = gr.Interface(
     inputs=gr.Image(type="filepath"),
     outputs=gr.Label(),
     title="Zero-Shot Image Classification",
-    description="Classify an image into predefined categories using CLIP."
+    description="Classify an image into predefined categories using CLIP.",
+    allow_flagging="never",
 )
 
 app = gr.TabbedInterface(
-    interfaces=[audio_interface, image_interface],
-    tab_names=["Audio Classification", "Image Classification"]
+    [audio_interface, image_interface],
+    ["Audio Classification", "Image Classification"]
 )
 
-if __name__ == "__main__":
-    app.launch()
+app.launch()
